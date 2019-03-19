@@ -1,6 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as Sequelize from "sequelize";
+import fs from "fs";
+import path from "path";
+import Sequelize from "sequelize";
 
 class Models {
   constructor(private db: Sequelize.Sequelize) {}

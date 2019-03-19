@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import * as Sequelize from "sequelize";
+import Sequelize from "sequelize";
 
 import ConfigInterface from "../interfaces/ConfigInterface";
 import ContentInterface from "../interfaces/ContentInterface";
