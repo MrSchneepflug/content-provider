@@ -1,26 +1,27 @@
 {
-    "defaultSeverity": "error",
-    "extends": [
-      "tslint:recommended"
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+    "object-literal-sort-keys": false,
+    "variable-name": [
+      true,
+      "ban-keywords",
+      "check-format"
     ],
-    "jsRules": {},
-    "rules": {
-      "variable-name": [
-        true,
-        "ban-keywords",
-        "check-format"
-      ],
-      "interface-name": {
-        "options": [
-          "never-prefix"
-        ]
-      }
-    },
-    "rulesDirectory": [],
-    "linterOptions": {
-      "exclude": [
-        "dist/**/*",
-        "node_modules/**/*"
+    "interface-name": {
+      "options": [
+        "never-prefix"
       ]
     }
+  },
+  "rulesDirectory": [],
+  "linterOptions": {
+    "exclude": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ]
   }
+}
