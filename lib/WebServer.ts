@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 
-import * as cors from "cors";
-import * as express from "express";
+import cors from "cors";
+import express from "express";
 
 import ConfigInterface from "./interfaces/ConfigInterface";
 import ConsumerPayloadInterface from "./interfaces/ConsumerPayloadInterface";

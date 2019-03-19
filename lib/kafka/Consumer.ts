@@ -1,4 +1,4 @@
-import * as EventEmitter from "events";
+import EventEmitter from "events";
 
 import { NConsumer as SinekConsumer } from "sinek";
 
