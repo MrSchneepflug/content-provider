@@ -2,11 +2,12 @@
     "compilerOptions": {
       "module": "commonjs",
       "target": "ES2017",
+      "esModuleInterop": true,
       "sourceMap": true,
+      "strict": true,
+      "declaration": true,
       "noImplicitReturns": true,
       "noFallthroughCasesInSwitch": true,
-      "noImplicitAny": false,
-      "strict": true,
       "outDir": "dist/"
     },
     "exclude": [
