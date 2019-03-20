@@ -38,7 +38,7 @@ export default class Consumer extends EventEmitter {
         true,
         true,
         this.config.consumerOptions,
-      ).catch((error) => this.handleError(error));
+      ).catch((error: Error) => this.handleError(error));
     } catch (error) {
       this.handleError(error);
     }

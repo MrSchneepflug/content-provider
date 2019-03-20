@@ -1,4 +1,4 @@
-export default (sequelize, DATA_TYPES) => {
+export default (sequelize: any, DATA_TYPES: any) => {
   return sequelize.define("Content", {
     content: DATA_TYPES.TEXT,
     id: {

@@ -62,8 +62,8 @@ export default class WebServer extends EventEmitter {
     });
 
     this.server = await (new Promise((resolve, reject) => {
-      let server;
-      server = app.listen(this.config.webserver.port, (error) => {
+      let server: any;
+      server = app.listen(this.config.webserver.port, (error: any) => {
 
         if (error) {
           return reject(error);

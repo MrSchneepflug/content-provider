@@ -1,8 +1,8 @@
 export default {
-  down: (queryInterface) => {
+  down: (queryInterface: any) => {
     return queryInterface.dropTable("Contents");
   },
-  up: (queryInterface, sequelize) => {
+  up: (queryInterface: any, sequelize: any) => {
     return queryInterface.createTable("Contents", {
       content: {
         type: sequelize.TEXT,
