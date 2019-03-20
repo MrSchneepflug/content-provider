@@ -1,5 +1,5 @@
 module.exports = {
-  up: (queryInterface, sequelize) => {
+  up: (queryInterface: any, sequelize: any) => {
     return queryInterface.bulkInsert("Contents", [{
       content: `<!DOCTYPE html><html><head><meta charset="utf-8" />
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -13,7 +13,7 @@ module.exports = {
     }], {});
   },
 
-  down: (queryInterface) => {
+  down: (queryInterface: any) => {
     return queryInterface.bulkDelete("Content", null, {});
   },
 };

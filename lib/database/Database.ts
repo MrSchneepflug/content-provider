@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import Sequelize from "sequelize";
+import {Model, Sequelize} from "sequelize";
 
 import ConfigInterface from "../interfaces/ConfigInterface";
 import ContentInterface from "../interfaces/ContentInterface";
@@ -8,9 +8,11 @@ import SequelizeDatabase from "./SequelizeDatabase";
 export default class Database extends EventEmitter {
   private config: ConfigInterface;
   private fromMemory: boolean;
-  private memStorage: object;
+  private memStorage: {
+    [key: string]: string;
+  };
   private database?: SequelizeDatabase;
-  private model?: Sequelize.Model<any, any>;
+  private model?: Model<any, any>;
 
   constructor(config: ConfigInterface) {
     super();
@@ -44,6 +46,7 @@ export default class Database extends EventEmitter {
     }
 
     if (this.model) {
+      // @ts-ignore
       this.model.upsert({
         content,
         id: key,
@@ -62,6 +65,7 @@ export default class Database extends EventEmitter {
     }
 
     if (this.model) {
+      // @ts-ignore
       const content = await this.model.findOne({
         where: {
           id: key,
@@ -81,6 +85,7 @@ export default class Database extends EventEmitter {
   public async getByPath(path: string): Promise<ContentInterface | null> {
 
     if (this.model) {
+      // @ts-ignore
       const content = await this.model.findOne({
         order: [["createdAt", "DESC"]],
         where: {
@@ -105,6 +110,7 @@ export default class Database extends EventEmitter {
 
     if (this.model) {
       await this.model.destroy({
+        // @ts-ignore
         where: {
           id: key,
         },

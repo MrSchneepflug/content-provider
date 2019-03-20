@@ -6,7 +6,7 @@ export default interface DatabaseConfigInterface {
   host?: string;
   password?: string;
   username?: string;
-  logging?: (...params) => void;
+  logging?: (...params: any[]) => void;
   pool?: {
     max?: number;
     min?: number;

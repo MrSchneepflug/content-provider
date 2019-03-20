@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
-import Sequelize from "sequelize";
+import {Sequelize, Model} from "sequelize";
 
 import DatabaseConfigInterface from "../interfaces/DatabaseConfigInterface";
 import Models from "../models";
 
 export default class SequelizeDatabase extends EventEmitter {
-  private db: Sequelize.Sequelize;
+  private db: Sequelize;
 
   constructor(private options: DatabaseConfigInterface) {
     super();
@@ -37,8 +37,9 @@ export default class SequelizeDatabase extends EventEmitter {
     await this.db.close();
   }
 
-  public getModel(name: string): Sequelize.Model<any, any> {
-    return this.db.models[name];
+  public getModel(name: string): Model<any, any> {
+    // @ts-ignore
+    return this.db[name];
   }
 
   private async testConnection(): Promise<void> {

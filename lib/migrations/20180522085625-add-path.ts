@@ -1,8 +1,8 @@
 export default {
-  down: (queryInterface) => {
+  down: (queryInterface: any) => {
     return queryInterface.removeColumn("Contents", "path");
   },
-  up: (queryInterface, sequelize) => {
+  up: (queryInterface: any, sequelize: any) => {
     return queryInterface.addColumn("Contents", "path", sequelize.TEXT);
   },
 };
