@@ -1,3 +1,5 @@
+import {Logging} from "sequelize";
+
 export default interface DatabaseConfigInterface {
   fromMemory: boolean;
   active?: boolean;
@@ -6,7 +8,7 @@ export default interface DatabaseConfigInterface {
   host?: string;
   password?: string;
   username?: string;
-  logging?: (...params: any[]) => void;
+  logging?: Logging["logging"];
   pool?: {
     max?: number;
     min?: number;
