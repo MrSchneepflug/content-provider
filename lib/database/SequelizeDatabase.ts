@@ -1,5 +1,6 @@
+import retry from "async-retry";
 import { EventEmitter } from "events";
-import {Sequelize, Model} from "sequelize";
+import {Model, Sequelize} from "sequelize";
 
 import DatabaseConfigInterface from "../interfaces/DatabaseConfigInterface";
 import Models from "../models";
@@ -44,10 +45,25 @@ export default class SequelizeDatabase extends EventEmitter {
 
   private async testConnection(): Promise<void> {
     try {
-      await this.db.authenticate();
+      await retry(async (bail: any, attempt: number) => {
+        super.emit("info", `trying to connect to database with attempt (${attempt}/10)`);
+        await this.db.authenticate();
+      }, {
+        retries: 9,
+        minTimeout: 3000,
+        factor: 1,
+        onRetry: (error: any) => {
+          super.emit("error", `Retrying to connect, error: ${error.message}`);
+        },
+      });
+
       super.emit("info", "Connection has been established successfully.");
     } catch (err) {
       super.emit("error", `Unable to connect to the database: ${err.message}`);
+
+      // Since the database is a mandatory service, there is no need to do anything else here.
+      // Restart the container and try again to connect.
+      process.exit(1);
     }
   }
 

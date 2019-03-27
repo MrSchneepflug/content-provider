@@ -45,7 +45,8 @@ export default class WebServer extends EventEmitter {
     }
 
     if (this.consumer) {
-      await this.consumer.connect();
+      // There is no necessity to await the consumer, since the application could already serve requests
+      this.consumer.connect();
     }
 
     const app = express();
