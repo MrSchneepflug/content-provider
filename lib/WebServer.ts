@@ -112,7 +112,7 @@ export default class WebServer extends EventEmitter {
   private setupDatabase() {
     const database = new Database(this.config);
 
-    database.on("error", this.handleError);
+    database.on("error", this.handleError.bind(this));
     database.on("info", (data) => super.emit("info", data));
 
     return database;
