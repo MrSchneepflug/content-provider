@@ -146,13 +146,14 @@ export default class WebServer extends EventEmitter {
    * @param message
    */
   private async handleMessage(message: ConsumerPayloadInterface) {
+    const {key, path} = message;
 
     if (!message.content) {
-      super.emit("deleted", message);
+      super.emit("deleted", {key, path});
       return await this.database.del(message.key);
     }
 
     await this.database.set(message.key, message.content, message.path);
-    super.emit("stored", message);
+    super.emit("stored", {key, path});
   }
 }
