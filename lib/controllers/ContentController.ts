@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import { Request, Response } from "express";
+import {EventEmitter} from "events";
+import {Request, Response} from "express";
 import Database from "../database/Database";
 import ConfigInterface from "../interfaces/ConfigInterface";
 import ContentInterface from "../interfaces/ContentInterface";
@@ -15,7 +15,7 @@ class ContentController extends EventEmitter {
   }
 
   public async get(): Promise<void> {
-    const { key } = this.req.params;
+    const {key} = this.req.params;
 
     try {
       const content: string = await this.database.get(key);
