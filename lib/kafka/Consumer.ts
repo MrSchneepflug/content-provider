@@ -2,15 +2,16 @@ import EventEmitter from "events";
 
 import {NConsumer as SinekConsumer} from "sinek";
 
+import Database from "../database/Database";
 import ConfigInterface from "./../interfaces/ConfigInterface";
 import ConsumerPayloadInterface from "./../interfaces/ConsumerPayloadInterface";
 
 export default class Consumer extends EventEmitter {
-  private consumer: SinekConsumer;
+  private readonly consumer: SinekConsumer;
 
   constructor(
     private config: ConfigInterface,
-    private process: (message: ConsumerPayloadInterface) => Promise<void>,
+    private database: Database,
   ) {
     super();
 
@@ -50,7 +51,6 @@ export default class Consumer extends EventEmitter {
    * Closes the consumer
    */
   public close(): void {
-
     if (this.consumer) {
       this.consumer.close();
     }
@@ -81,14 +81,29 @@ export default class Consumer extends EventEmitter {
    * Handle newly created messages
    */
   private async handleMessage(message: any) {
-
     const messageContent: ConsumerPayloadInterface = {
       content: message.value.content,
       key: message.key.toString("utf8"),
       path: message.value.path,
     };
 
-    await this.process(messageContent);
+    const {key, path} = messageContent;
+
+    if (message.content) {
+      try {
+        await this.database.set(message.key, message.content, message.path);
+        super.emit("stored", {key, path});
+      } catch (error) {
+        super.emit("error", {msg: "could not store page", key, path});
+      }
+    } else {
+      try {
+        await this.database.del(message.key);
+        super.emit("deleted", {key, path});
+      } catch (error) {
+        super.emit("error", {msg: "could not delete page", key, path});
+      }
+    }
   }
 
   /**
