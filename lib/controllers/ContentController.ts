@@ -44,7 +44,9 @@ class ContentController extends EventEmitter {
       });
     }
 
-    this.sendError(`Content with path "${path}" not found`);
+    this.res.status(404).json({
+      error: `Content with path "${path}" not found`,
+    });
 
     return;
   }
@@ -55,7 +57,9 @@ class ContentController extends EventEmitter {
         key,
       });
 
-      this.sendError(`Content with key or path "${key}" does not exist.`);
+      this.res.status(404).json({
+        error: `Content with key or path "${key}" does not exist.`,
+      });
 
       return;
     }
@@ -69,12 +73,6 @@ class ContentController extends EventEmitter {
     this.res.set("cache-control", `max-age=${this.config.webserver.contentMaxAgeSec || 300}`);
     this.res.write(content);
     this.res.end();
-  }
-
-  private sendError(errorMessage: string): void {
-    this.res.status(404).json({
-      error: errorMessage,
-    });
   }
 }
 
