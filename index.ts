@@ -1,7 +1,7 @@
 import { merge } from "lodash";
+import Application from "./lib/Application";
 import ConfigInterface from "./lib/interfaces/ConfigInterface";
 import ContentInterface from "./lib/interfaces/ContentInterface";
-import WebServer from "./lib/WebServer";
 
 const defaultOptions = {
   consumeWithBackpressure: true,
@@ -27,7 +27,7 @@ const defaultOptions = {
   workerPerPartition: 1,
 };
 
-let server: WebServer;
+let server: Application;
 
 export const getByPath = async (path: string): Promise<ContentInterface | null> => {
   if (server) {
@@ -40,10 +40,10 @@ export const getByPath = async (path: string): Promise<ContentInterface | null> 
   return null;
 };
 
-export default (options: ConfigInterface): WebServer => {
+export default (options: ConfigInterface): Application => {
   const config: ConfigInterface = merge(defaultOptions, options);
 
-  server = new WebServer(config);
+  server = new Application(config);
 
   return server;
 };

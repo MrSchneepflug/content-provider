@@ -11,7 +11,7 @@ import Database from "./database/Database";
 import Consumer from "./kafka/Consumer";
 import healthRoutes from "./routes/health";
 
-export default class WebServer extends EventEmitter {
+export default class Application extends EventEmitter {
   private consumer?: Consumer;
   private database: Database;
   private server?: any;
