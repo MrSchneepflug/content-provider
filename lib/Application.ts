@@ -15,7 +15,6 @@ import healthRoutes from "./routes/health";
 export default class Application extends EventEmitter {
   private consumer?: Consumer;
   private database: Database;
-  private server?: any;
 
   constructor(private config: ConfigInterface) {
     super();
@@ -23,7 +22,6 @@ export default class Application extends EventEmitter {
     this.config = config;
 
     this.database = this.setupDatabase();
-    this.server = null;
 
     if (this.config.kafkaHost) {
       this.consumer = new Consumer(config, this.handleMessage.bind(this));
@@ -83,17 +81,10 @@ export default class Application extends EventEmitter {
       });
     });
 
-    this.server = await (new Promise((resolve, reject) => {
-      let server: any;
-      server = app.listen(this.config.webserver.port, (error: any) => {
-
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(server);
-      });
-    }));
+    app.listen(this.config.webserver.port, (error: any) => {
+      super.emit("error", {msg: "webserver crashed", error: error.message});
+      process.exit(1);
+    });
 
     return app;
   }
