@@ -1,7 +1,10 @@
-import { merge } from "lodash";
+import {merge} from "lodash";
 import Application from "./lib/Application";
+import Database from "./lib/database/Database";
+import {createExpressApplication} from "./lib/factories";
 import ConfigInterface from "./lib/interfaces/ConfigInterface";
 import ContentInterface from "./lib/interfaces/ContentInterface";
+import Consumer from "./lib/kafka/Consumer";
 
 const defaultOptions = {
   consumeWithBackpressure: true,
@@ -32,9 +35,7 @@ let server: Application;
 export const getByPath = async (path: string): Promise<ContentInterface | null> => {
   if (server) {
     const database = server.getDatabase();
-    const entry: ContentInterface | null = await database.getByPath(path);
-
-    return entry;
+    return await database.getByPath(path);
   }
 
   return null;
@@ -43,7 +44,11 @@ export const getByPath = async (path: string): Promise<ContentInterface | null> 
 export default (options: ConfigInterface): Application => {
   const config: ConfigInterface = merge(defaultOptions, options);
 
-  server = new Application(config);
+  const database = new Database(config);
+  const consumer = new Consumer(config, database);
+  const expressApplication = createExpressApplication(config, database);
+
+  server = new Application(database, consumer, expressApplication);
 
   return server;
 };
