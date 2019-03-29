@@ -1,22 +1,23 @@
 import {EventEmitter} from "events";
 
 import cors from "cors";
-import express from "express";
+import express, {Express, Router} from "express";
 
 import ConfigInterface from "./interfaces/ConfigInterface";
 import ConsumerPayloadInterface from "./interfaces/ConsumerPayloadInterface";
 
-import {Response} from "express";
+import {Request, Response} from "express";
 import Database from "./database/Database";
 import ContentInterface from "./interfaces/ContentInterface";
 import Consumer from "./kafka/Consumer";
 import healthRoutes from "./routes/health";
 
 export default class Application extends EventEmitter {
-  private consumer?: Consumer;
-  private database: Database;
+  private readonly consumer?: Consumer;
+  private readonly database: Database;
+  private readonly app: Express;
 
-  constructor(private config: ConfigInterface) {
+  constructor(private readonly config: ConfigInterface) {
     super();
 
     this.config = config;
@@ -31,36 +32,20 @@ export default class Application extends EventEmitter {
     this.handleServed = this.handleServed.bind(this);
     this.handleMissed = this.handleMissed.bind(this);
     this.handleError = this.handleError.bind(this);
-  }
 
-  public getDatabase() {
-    return this.database;
-  }
+    this.app = express();
 
-  public async start(): Promise<express.Application> {
+    this.app.use(cors());
+    this.app.use(healthRoutes());
 
-    if (this.database) {
-      await this.database.connect();
-    }
-
-    if (this.consumer) {
-      // There is no necessity to await the consumer, since the application could already serve requests
-      this.consumer.connect();
-    }
-
-    const app = express();
-
-    app.use(cors());
-    app.use(healthRoutes());
-
-    app.get("/content/:key", async (req: express.Request, res: express.Response) => {
+    this.app.get("/content/:key", async (req: Request, res: Response) => {
       const {key} = req.params;
 
       const content: string = await this.database.get(key);
       await this.render(res, key, content);
     });
 
-    app.get("/raw/*", async (req: express.Request, res: express.Response) => {
+    this.app.get("/raw/*", async (req: Request, res: Response) => {
       const path = req.params[0];
 
       try {
@@ -80,13 +65,30 @@ export default class Application extends EventEmitter {
         error: `Content with path "${path}" not found`,
       });
     });
+  }
 
-    app.listen(this.config.webserver.port, (error: any) => {
+  public use(router: Router) {
+    this.app.use(router);
+  }
+
+  public getDatabase() {
+    return this.database;
+  }
+
+  public async start(): Promise<void> {
+    if (this.database) {
+      await this.database.connect();
+    }
+
+    if (this.consumer) {
+      // There is no necessity to await the consumer, since the application could already serve requests
+      this.consumer.connect();
+    }
+
+    this.app.listen(this.config.webserver.port, (error: any) => {
       super.emit("error", {msg: "webserver crashed", error: error.message});
       process.exit(1);
     });
-
-    return app;
   }
 
   private async render(res: Response, key: string, content: string): Promise<void> {
