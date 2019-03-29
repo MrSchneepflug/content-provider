@@ -6,8 +6,9 @@ import express from "express";
 import ConfigInterface from "./interfaces/ConfigInterface";
 import ConsumerPayloadInterface from "./interfaces/ConsumerPayloadInterface";
 
-import ContentController from "./controllers/ContentController";
+import {Response} from "express";
 import Database from "./database/Database";
+import ContentInterface from "./interfaces/ContentInterface";
 import Consumer from "./kafka/Consumer";
 import healthRoutes from "./routes/health";
 
@@ -55,11 +56,31 @@ export default class Application extends EventEmitter {
     app.use(healthRoutes());
 
     app.get("/content/:key", async (req: express.Request, res: express.Response) => {
-      (await this.getContentController(req, res)).get();
+      const {key} = req.params;
+
+      const content: string = await this.database.get(key);
+      await this.render(res, key, content);
     });
 
     app.get("/raw/*", async (req: express.Request, res: express.Response) => {
-      (await this.getContentController(req, res)).getByPath();
+      const path = req.params[0];
+
+      try {
+        const entry: ContentInterface | null = await this.database.getByPath(path);
+
+        if (entry) {
+          await this.render(res, path, entry.content);
+          return;
+        }
+      } catch (error) {
+        super.emit("missed", {
+          key: path,
+        });
+      }
+
+      res.status(404).json({
+        error: `Content with path "${path}" not found`,
+      });
     });
 
     this.server = await (new Promise((resolve, reject) => {
@@ -77,37 +98,19 @@ export default class Application extends EventEmitter {
     return app;
   }
 
-  public close(): void {
+  private async render(res: Response, key: string, content: string): Promise<void> {
+    if (content) {
+      super.emit("served", {key});
 
-    if (this.consumer) {
-      this.consumer.close();
+      res.status(200);
+      res.set("content-type", "text/html");
+      res.set("cache-control", `max-age=${this.config.webserver.contentMaxAgeSec || 300}`);
+      res.write(content);
+      res.end();
+    } else {
+      super.emit("missed", {key});
+      res.status(404).json({error: `Content with key or path "${key}" does not exist.`});
     }
-
-    if (this.server) {
-      this.server.close();
-    }
-
-    if (this.database) {
-      this.database.close();
-    }
-  }
-
-  private async getContentController(
-    req: express.Request,
-    res: express.Response,
-  ): Promise<ContentController> {
-    const content = new ContentController(
-      req,
-      res,
-      this.database,
-      this.config,
-    );
-
-    content.on("served", this.handleServed);
-    content.on("missed", this.handleMissed);
-    content.on("error", this.handleError);
-
-    return content;
   }
 
   private setupDatabase() {
