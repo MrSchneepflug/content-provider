@@ -148,12 +148,20 @@ export default class WebServer extends EventEmitter {
   private async handleMessage(message: ConsumerPayloadInterface) {
     const {key, path} = message;
 
-    if (!message.content) {
-      super.emit("deleted", {key, path});
-      return await this.database.del(message.key);
+    if (message.content) {
+      try {
+        await this.database.set(message.key, message.content, message.path);
+        super.emit("stored", {key, path});
+      } catch (error) {
+        super.emit("error", {msg: "could not store page", key, path});
+      }
+    } else {
+      try {
+        await this.database.del(message.key);
+        super.emit("deleted", {key, path});
+      } catch (error) {
+        super.emit("error", {msg: "could not delete page", key, path});
+      }
     }
-
-    await this.database.set(message.key, message.content, message.path);
-    super.emit("stored", {key, path});
   }
 }
