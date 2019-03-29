@@ -1,5 +1,5 @@
 import retry from "async-retry";
-import { EventEmitter } from "events";
+import {EventEmitter} from "events";
 import {Model, Sequelize} from "sequelize";
 
 import DatabaseConfigInterface from "../interfaces/DatabaseConfigInterface";

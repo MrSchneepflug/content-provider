@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-import { NConsumer as SinekConsumer } from "sinek";
+import {NConsumer as SinekConsumer} from "sinek";
 
 import ConfigInterface from "./../interfaces/ConfigInterface";
 import ConsumerPayloadInterface from "./../interfaces/ConsumerPayloadInterface";
@@ -14,7 +14,7 @@ export default class Consumer extends EventEmitter {
   ) {
     super();
 
-    const { consumeFrom } = config;
+    const {consumeFrom} = config;
     this.consumer = new SinekConsumer(consumeFrom, config);
     this.consume = this.consume.bind(this);
     this.handleError = this.handleError.bind(this);

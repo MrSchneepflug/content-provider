@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import {EventEmitter} from "events";
 
 import cors from "cors";
 import express from "express";

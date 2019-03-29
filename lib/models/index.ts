@@ -3,7 +3,8 @@ import path from "path";
 import {Sequelize} from "sequelize";
 
 class Models {
-  constructor(private db: Sequelize) {}
+  constructor(private db: Sequelize) {
+  }
 
   public load(): Sequelize {
     const basename: string = path.basename(__filename);
