@@ -24,6 +24,7 @@ export {Application, Database};
 export default (options: ConfigInterface): {
   application: Application,
   database: Database,
+  consumer: Consumer,
   expressApplication: Express,
 } => {
   const config: ConfigInterface = merge(defaultOptions, options);
@@ -37,6 +38,7 @@ export default (options: ConfigInterface): {
   return {
     application,
     database,
+    consumer,
     expressApplication,
   };
 };
