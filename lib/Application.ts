@@ -14,6 +14,7 @@ export default class Application extends EventEmitter {
     this.database.on("error", (data) => super.emit("error", data));
     this.database.on("info", (data) => super.emit("info", data));
 
+    this.consumer.on("info", (data) => super.emit("info", data));
     this.consumer.on("error", (data) => super.emit("error", data));
     this.consumer.on("stored", (data) => super.emit("stored", data));
     this.consumer.on("deleted", (data) => super.emit("deleted", data));
@@ -40,8 +41,12 @@ export default class Application extends EventEmitter {
     }
 
     this.expressApplication.listen(port, (error: any) => {
-      super.emit("error", {msg: "webserver crashed", error: error.message});
-      process.exit(1);
+      if (error) {
+        super.emit("error", {msg: "webserver crashed", error: error.message});
+        process.exit(1);
+      } else {
+        super.emit("info", `Application listening on port ${port}`);
+      }
     });
   }
 }
