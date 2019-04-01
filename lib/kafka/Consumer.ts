@@ -57,8 +57,6 @@ export default class Consumer extends EventEmitter {
   }
 
   private consume(message: Message, callback: (error: any) => void): void {
-    super.emit("info", `CONSUMING MESSAGE: ${JSON.stringify(message)}`);
-
     if (Array.isArray(message)) {
       message.forEach((kafkaMessage: KafkaMessage) => this.consumeSingle(kafkaMessage, callback));
     } else if (isKafkaMessage(message)) {
@@ -111,10 +109,7 @@ export default class Consumer extends EventEmitter {
    * Handle newly created messages
    */
   private async handleMessage(message: KafkaMessage) {
-    super.emit("info", `received message with content-length: ${message.value.content.length} `, {
-      key: message.key.toString("utf8"),
-      contentLength: message.value.content.length,
-    });
+    super.emit("info", "received message");
 
     const {content, path} = message.value;
     const key = message.key.toString("utf8");
