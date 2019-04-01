@@ -1,5 +1,5 @@
 import {EventEmitter} from "events";
-import {Express, Router} from "express";
+import {Express} from "express";
 import Database from "./database/Database";
 import Consumer from "./kafka/Consumer";
 
@@ -10,24 +10,6 @@ export default class Application extends EventEmitter {
     private readonly expressApplication: Express,
   ) {
     super();
-
-    this.database.on("error", (data) => super.emit("error", data));
-    this.database.on("info", (data) => super.emit("info", data));
-
-    this.consumer.on("info", (data) => super.emit("info", data));
-    this.consumer.on("error", (data) => super.emit("error", data));
-    this.consumer.on("stored", (data) => super.emit("stored", data));
-    this.consumer.on("deleted", (data) => super.emit("deleted", data));
-
-    this.expressApplication.on("missed", (data) => super.emit("missed", data));
-  }
-
-  public use(router: Router) {
-    this.expressApplication.use(router);
-  }
-
-  public getDatabase() {
-    return this.database;
   }
 
   public async start(port: number): Promise<void> {
