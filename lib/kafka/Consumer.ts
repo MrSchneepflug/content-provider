@@ -1,10 +1,10 @@
 import EventEmitter from "events";
 
-import {NConsumer as SinekConsumer} from "sinek";
+import {KafkaMessage, NConsumer as SinekConsumer, SortedMessageBatch} from "sinek";
 
 import Database from "../database/Database";
+import {isKafkaMessage, Message} from "../typeguards";
 import ConfigInterface from "./../interfaces/ConfigInterface";
-import ConsumerPayloadInterface from "./../interfaces/ConsumerPayloadInterface";
 
 export default class Consumer extends EventEmitter {
   private readonly consumer: SinekConsumer;
@@ -56,12 +56,24 @@ export default class Consumer extends EventEmitter {
     }
   }
 
+  private consume(message: Message, callback: (error: any) => void): void {
+    super.emit("info", `CONSUMING MESSAGE: ${JSON.stringify(message)}`);
+
+    if (Array.isArray(message)) {
+      message.forEach((kafkaMessage: KafkaMessage) => this.consumeSingle(kafkaMessage, callback));
+    } else if (isKafkaMessage(message)) {
+      this.consumeSingle(message, callback);
+    } else {
+      this.consumeBatch(message, callback);
+    }
+  }
+
   /**
    * Handle consuming messages
    */
-  private async consume(
-    message: object,
-    callback: (error: Error | null) => void,
+  private async consumeSingle(
+    message: KafkaMessage,
+    callback: (error: any) => void,
   ): Promise<void> {
     let error: Error | null;
 
@@ -77,28 +89,46 @@ export default class Consumer extends EventEmitter {
     callback(error);
   }
 
+  private consumeBatch(batch: SortedMessageBatch, callback: (error: any) => void): void {
+    for (const topic in batch) {
+      if (!batch.hasOwnProperty(topic)) {
+        continue;
+      }
+
+      for (const partition in batch[topic]) {
+        if (!batch[topic].hasOwnProperty(partition)) {
+          continue;
+        }
+
+        batch[topic][partition].forEach((message: KafkaMessage) => {
+          this.consumeSingle(message, callback);
+        });
+      }
+    }
+  }
+
   /**
    * Handle newly created messages
    */
-  private async handleMessage(message: any) {
-    const messageContent: ConsumerPayloadInterface = {
-      content: message.value.content,
+  private async handleMessage(message: KafkaMessage) {
+    super.emit("info", `received message with content-length: ${message.value.content.length} `, {
       key: message.key.toString("utf8"),
-      path: message.value.path,
-    };
+      contentLength: message.value.content.length,
+    });
 
-    const {key, path} = messageContent;
+    const {content, path} = message.value;
+    const key = message.key.toString("utf8");
 
-    if (message.content) {
+    if (content) {
       try {
-        await this.database.set(message.key, message.content, message.path);
+        await this.database.set(key, content, path);
         super.emit("stored", {key, path});
       } catch (error) {
         super.emit("error", {msg: "could not store page", key, path});
       }
     } else {
       try {
-        await this.database.del(message.key);
+        await this.database.del(key);
         super.emit("deleted", {key, path});
       } catch (error) {
         super.emit("error", {msg: "could not delete page", key, path});
