@@ -7,27 +7,16 @@ import ContentInterface from "./lib/interfaces/ContentInterface";
 import Consumer from "./lib/kafka/Consumer";
 
 const defaultOptions = {
-  consumeWithBackpressure: true,
   kafkaHost: "127.0.0.1:9092",
-  options: {
-    ackTimeoutMs: 100,
-    autoCommit: true,
-    autoCommitIntervalMs: 1000,
-    fetchMaxBytes: 1024 * 512,
-    fetchMaxWaitMs: 10,
-    fetchMinBytes: 1,
-    fromOffset: "earliest",
-    heartbeatInterval: 250,
-    partitionerType: 3,
-    protocol: ["roundrobin"],
-    requireAcks: 1,
-    retryMinTimeout: 250,
-    sessionTimeout: 8000,
-    ssl: false,
+  // metadata.broker.list MUST be set via kafkaHost-property. If we set it here manually, it will be used as
+  // an overwrite.
+  //
+  // @ts-ignore
+  noptions: {
+    "group.id": "content-provider",
+    "api.version.request": true,
+    "socket.keepalive.enable": true,
   },
-  produceFlushEveryMs: 1000,
-  producerPartitionCount: 1,
-  workerPerPartition: 1,
 };
 
 let server: Application;
