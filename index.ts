@@ -1,9 +1,9 @@
+import {Express} from "express";
 import {merge} from "lodash";
 import Application from "./lib/Application";
 import Database from "./lib/database/Database";
 import {createExpressApplication} from "./lib/factories";
 import ConfigInterface from "./lib/interfaces/ConfigInterface";
-import ContentInterface from "./lib/interfaces/ContentInterface";
 import Consumer from "./lib/kafka/Consumer";
 
 const defaultOptions = {
@@ -19,25 +19,24 @@ const defaultOptions = {
   },
 };
 
-let server: Application;
+export {Application, Database};
 
-export const getByPath = async (path: string): Promise<ContentInterface | null> => {
-  if (server) {
-    const database = server.getDatabase();
-    return await database.getByPath(path);
-  }
-
-  return null;
-};
-
-export default (options: ConfigInterface): Application => {
+export default (options: ConfigInterface): {
+  application: Application,
+  database: Database,
+  expressApplication: Express,
+} => {
   const config: ConfigInterface = merge(defaultOptions, options);
 
   const database = new Database(config);
   const consumer = new Consumer(config, database);
   const expressApplication = createExpressApplication(config, database);
 
-  server = new Application(database, consumer, expressApplication);
+  const application = new Application(database, consumer, expressApplication);
 
-  return server;
+  return {
+    application,
+    database,
+    expressApplication,
+  };
 };
