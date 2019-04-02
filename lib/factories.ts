@@ -42,8 +42,9 @@ export function createExpressApplication(config: ConfigInterface, database: Data
 
       res.status(200)
         .set("content-type", "text/html")
-        .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`)
-        .write(content);
+        .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`);
+
+      res.end(content);
     } else {
       app.emit("missed", {key});
 
