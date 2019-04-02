@@ -17,6 +17,15 @@ const defaultOptions = {
     "api.version.request": true,
     "socket.keepalive.enable": true,
   },
+  batchConfig: {
+    batchSize: 5,
+    commitEveryNBatch: 1,
+    concurrency: 1,
+    commitSync: false,
+    noBatchCommits: false,
+    manualBatching: true,
+    sortedManualBatch: false,
+  },
 };
 
 export {Application, Database};

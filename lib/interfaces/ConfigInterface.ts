@@ -1,3 +1,4 @@
+import {BatchConfig} from "sinek";
 import DatabaseConfigInterface from "./DatabaseConfigInterface";
 import LoggerInterface from "./LoggerInterface";
 
@@ -40,11 +41,5 @@ export default interface ConfigInterface {
     contentMaxAgeSec?: number;
   };
   postgres: DatabaseConfigInterface;
-  consumerOptions?: {
-    batchSize?: number;
-    commitEveryNBatch?: number;
-    concurrency?: number;
-    commitSync?: boolean;
-    noBatchCommits?: boolean;
-  };
+  batchConfig?: BatchConfig;
 }
