@@ -1,8 +1,8 @@
 import {KafkaMessage, SortedMessageBatch} from "sinek";
 
-export type Message = KafkaMessage | KafkaMessage[] | SortedMessageBatch;
+export type SinekMessage = KafkaMessage | KafkaMessage[] | SortedMessageBatch;
 
-export function isKafkaMessage(message: Message): message is KafkaMessage {
+export function isKafkaMessage(message: SinekMessage): message is KafkaMessage {
   const isNotArray = !Array.isArray(message);
   const hasAllKafkaMessageProperties = ["topic", "partition", "offset", "key", "value"]
     .map((property: string) => property in message)
