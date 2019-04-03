@@ -6,7 +6,7 @@ import {createExpressApplication} from "./lib/factories";
 import ConfigInterface from "./lib/interfaces/ConfigInterface";
 import Consumer from "./lib/kafka/Consumer";
 
-const defaultOptions = {
+const defaultOptions: ConfigInterface = {
   kafkaHost: "127.0.0.1:9092",
   // metadata.broker.list MUST be set via kafkaHost-property. If we set it here manually, it will be used as
   // an overwrite.
@@ -16,15 +16,10 @@ const defaultOptions = {
     "group.id": "rewe-duc-content-provider",
     "api.version.request": true,
     "socket.keepalive.enable": true,
+    "enable.auto.commit": false,
   },
-  batchConfig: {
-    batchSize: 5,
-    commitEveryNBatch: 1,
-    concurrency: 1,
-    commitSync: false,
-    noBatchCommits: false,
-    manualBatching: true,
-    sortedManualBatch: false,
+  tconf: {
+    "auto.offset.reset": "earliest",
   },
 };
 

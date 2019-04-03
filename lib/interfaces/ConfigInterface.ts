@@ -1,4 +1,4 @@
-import {BatchConfig} from "sinek";
+import {BatchConfig, NConsumerKafkaOptions} from "sinek";
 import DatabaseConfigInterface from "./DatabaseConfigInterface";
 import LoggerInterface from "./LoggerInterface";
 
@@ -42,4 +42,8 @@ export default interface ConfigInterface {
   };
   postgres: DatabaseConfigInterface;
   batchConfig?: BatchConfig;
+  noptions?: NConsumerKafkaOptions;
+  tconf?: {
+    "auto.offset.reset"?: "smallest" | "earliest" | "beginning" | "largest" | "latest" | "end" | "error";
+  };
 }
