@@ -47,7 +47,7 @@ export default class Database extends EventEmitter {
 
     if (this.model) {
       // @ts-ignore
-      this.model.upsert({
+      await this.model.upsert({
         content,
         id: key,
         path: this.getPathForQuery(path),
