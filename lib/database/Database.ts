@@ -6,9 +6,9 @@ import ContentInterface from "../interfaces/ContentInterface";
 import SequelizeDatabase from "./SequelizeDatabase";
 
 export default class Database extends EventEmitter {
-  private config: ConfigInterface;
-  private fromMemory: boolean;
-  private memStorage: {
+  private readonly config: ConfigInterface;
+  private readonly fromMemory: boolean;
+  private readonly memStorage: {
     [key: string]: string;
   };
   private database?: SequelizeDatabase;
