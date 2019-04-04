@@ -3,35 +3,47 @@ import Database from "../database/Database";
 import ConfigInterface from "../interfaces/ConfigInterface";
 import ContentInterface from "../interfaces/ContentInterface";
 
-async function render(
-  res: Response,
-  key: string,
-  content: string,
-  app: Express,
-  config: ConfigInterface,
-): Promise<void> {
-  if (content) {
-    app.emit("served", {key});
-
-    res.status(200)
-      .set("content-type", "text/html")
-      .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`);
-
-    res.end(content);
-  } else {
-    app.emit("missed", {key});
-    res.status(404).json({error: `Content with key or path "${key}" does not exist.`});
-  }
-}
-
 function contentRoutes(app: Express, config: ConfigInterface, database: Database) {
   const router: Router = Router();
+
+  // @todo: consider pagination
+  router.get("/content", async (req: Request, res: Response) => {
+    try {
+      const entries = await database.getAll();
+
+      app.emit("served all");
+      res.status(200)
+        .set("content-type", "application/json")
+        .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`)
+        .json(entries);
+
+      return;
+    } catch (error) {
+      app.emit("error", "could not retrieve all entries");
+    }
+
+    res.status(500).json({error: "Could not retrieve all entries"});
+  });
 
   router.get("/content/:key", async (req: Request, res: Response) => {
     const {key} = req.params;
 
-    const content: string = await database.get(key);
-    await render(res, key, content, app, config);
+    try {
+      const content: string = await database.get(key);
+
+      if (content) {
+        app.emit("served", {key});
+        res.status(200)
+          .set("content-type", "text/html")
+          .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`)
+          .end(content);
+      } else {
+        app.emit("missed", {key});
+        res.status(404).json({error: `Content with key "${key}" does not exist.`});
+      }
+    } catch (error) {
+      app.emit("missed", {key});
+    }
   });
 
   router.get("/raw/*", async (req: Request, res: Response) => {
@@ -40,12 +52,18 @@ function contentRoutes(app: Express, config: ConfigInterface, database: Database
     try {
       const entry: ContentInterface | null = await database.getByPath(path);
 
-      if (entry) {
-        await render(res, path, entry.content, app, config);
-        return;
+      if (entry && entry.content) {
+        app.emit("served raw", {path});
+        res.status(200)
+          .set("content-type", "text/html")
+          .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`)
+          .end(entry.content);
+      } else {
+        app.emit("missed", {path});
+        res.status(404).json({error: `Content with path "${path}" does not exist.`});
       }
     } catch (error) {
-      app.emit("missed", {key: path});
+      app.emit("missed", {path});
     }
 
     res.status(404).json({error: `Content with path "${path}" not found`});

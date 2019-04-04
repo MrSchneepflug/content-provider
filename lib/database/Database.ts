@@ -126,6 +126,35 @@ export default class Database extends EventEmitter {
     }
   }
 
+  public async getAll(): Promise<any[]> {
+    super.emit("info", `[getAll] retrieving summary`);
+
+    if (this.fromMemory) {
+      super.emit("info", `[getAll] using memory`);
+
+      const entries = [];
+
+      for (const key in this.memStorage) {
+        if (!this.memStorage.hasOwnProperty(key)) {
+          continue;
+        }
+
+        entries.push({id: key, content: this.memStorage[key]});
+      }
+
+      return entries;
+    }
+
+    if (this.model) {
+      // @ts-ignore
+      return await this.model.findAll({
+        attributes: ["id", "path"],
+      });
+    }
+
+    return [];
+  }
+
   public async close(): Promise<void> {
     if (this.database) {
       await this.database.close();
