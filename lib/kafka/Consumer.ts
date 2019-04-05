@@ -47,7 +47,15 @@ export default class Consumer extends EventEmitter {
       commit();
       super.emit(content ? "stored" : "deleted", {key, path});
     } catch (error) {
-      super.emit("error", {msg: `could not ${content ? "store" : "delete"} page`, key, path});
+      super.emit(
+        "error",
+        {
+          msg: `could not ${content ? "store" : "delete"} page`,
+          key,
+          path,
+          errorMessage: error.message,
+        },
+      );
     }
   }
 }

@@ -55,6 +55,8 @@ export default class Database extends EventEmitter {
         id: key,
         path: this.getPathForQuery(path),
       });
+
+      super.emit("info", `[set] content stored with path: ${path}`);
     } else {
       super.emit("error", `[set] No model available, cannot store ${key}`);
     }
@@ -77,6 +79,7 @@ export default class Database extends EventEmitter {
       });
 
       if (content) {
+        super.emit("info", `[get] content retrieved with key: ${key}`);
         return content.dataValues.content;
       }
     } else {
@@ -123,6 +126,8 @@ export default class Database extends EventEmitter {
           id: key,
         },
       });
+
+      super.emit("info", `[del] content deleted with key: ${key}`);
     }
   }
 
