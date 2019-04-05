@@ -1,6 +1,5 @@
 import {Express} from "express";
 import {merge} from "lodash";
-import Application from "./lib/Application";
 import Database from "./lib/database/Database";
 import {createExpressApplication} from "./lib/factories";
 import ConfigInterface from "./lib/interfaces/ConfigInterface";
@@ -23,10 +22,10 @@ const defaultOptions: ConfigInterface = {
   },
 };
 
-export {Application, Database};
+export {Database};
 
 export default (options: ConfigInterface): {
-  application: Application,
+  startApplication: (port: number) => Promise<void>,
   database: Database,
   consumer: Consumer,
   expressApplication: Express,
@@ -37,10 +36,24 @@ export default (options: ConfigInterface): {
   const consumer = new Consumer(config, database);
   const expressApplication = createExpressApplication(config, database);
 
-  const application = new Application(database, consumer, expressApplication);
+  async function startApplication(port: number) {
+    await database.connect();
+
+    // There is no necessity to await the consumer, since the application could already serve requests
+    consumer.connect();
+
+    expressApplication.listen(port, (error: any) => {
+      if (error) {
+        expressApplication.emit("error", {msg: "webserver crashed", error: error.message});
+        process.exit(1);
+      } else {
+        expressApplication.emit("info", `Application listening on port ${port}`);
+      }
+    });
+  }
 
   return {
-    application,
+    startApplication,
     database,
     consumer,
     expressApplication,
