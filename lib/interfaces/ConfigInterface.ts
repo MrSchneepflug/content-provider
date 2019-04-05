@@ -8,7 +8,7 @@ export default interface ConfigInterface {
   clientName: string;
   kafkaHost?: string;
   consumeWithBackpressure?: boolean;
-  logger?: LoggerInterface | undefined;
+  logger: LoggerInterface;
   workerPerPartition?: number;
   produceFlushEveryMs?: number;
   producerPartitionCount?: number;

@@ -1,30 +1,27 @@
-import EventEmitter from "events";
 import {NConsumer as SinekConsumer} from "sinek";
 import Database from "../database/Database";
 import {isKafkaMessage, SinekMessage} from "../typeguards";
 import ConfigInterface from "./../interfaces/ConfigInterface";
 
-export default class Consumer extends EventEmitter {
+export default class Consumer {
   private readonly consumer: SinekConsumer;
 
   constructor(private config: ConfigInterface, private database: Database) {
-    super();
-
     const {consumeFrom} = config;
     this.consumer = new SinekConsumer(consumeFrom, config);
-    this.consumer.on("error", (error) => super.emit("error", error));
+    this.consumer.on("error", (error) => this.config.logger.error(`[SinekError]: ${error.message}`, error));
   }
 
   public async connect(): Promise<void> {
     try {
       await this.consumer.connect();
     } catch (error) {
-      super.emit("error", error);
+      this.config.logger.error("Could not connect consumer", {error: error.message});
     }
 
     this.consumer
       .consume(this.consume.bind(this), true, true)
-      .catch((error: Error) => super.emit("error", error));
+      .catch((error: Error) => this.config.logger.error("Could not connect consumer", {error: error.message}));
   }
 
   private async consume(message: SinekMessage, commit: () => void): Promise<void> {
@@ -32,10 +29,10 @@ export default class Consumer extends EventEmitter {
       throw new Error("Can only handle messages in KafkaMessage format");
     }
 
-    super.emit("info", "received message");
-
     const {content, path} = message.value;
     const key = message.key.toString("utf8");
+
+    this.config.logger.info("receiving message", {key, path});
 
     try {
       if (content) {
@@ -45,17 +42,13 @@ export default class Consumer extends EventEmitter {
       }
 
       commit();
-      super.emit(content ? "stored" : "deleted", {key, path});
+      this.config.logger.info(content ? "stored" : "deleted", {key, path});
     } catch (error) {
-      super.emit(
-        "error",
-        {
-          msg: `could not ${content ? "store" : "delete"} page`,
-          key,
-          path,
-          errorMessage: error.message,
-        },
-      );
+      this.config.logger.error(`could not ${content ? "store" : "delete"} page`, {
+        key,
+        path,
+        errorMessage: error.message,
+      });
     }
   }
 }

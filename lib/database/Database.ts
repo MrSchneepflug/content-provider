@@ -1,29 +1,26 @@
-import {EventEmitter} from "events";
 import {Model} from "sequelize";
 
 import ConfigInterface from "../interfaces/ConfigInterface";
 import ContentInterface from "../interfaces/ContentInterface";
 import SequelizeDatabase from "./SequelizeDatabase";
 
-export default class Database extends EventEmitter {
+export default class Database {
   private readonly config: ConfigInterface;
   private readonly fromMemory: boolean;
   private readonly memStorage: {
     [key: string]: string;
   };
-  private database?: SequelizeDatabase;
+  private readonly database?: SequelizeDatabase;
   private model?: Model<any, any>;
 
   constructor(config: ConfigInterface) {
-    super();
-
     this.config = config;
     this.memStorage = {};
 
     this.fromMemory = this.config.postgres.fromMemory || !this.config.postgres.username;
 
     if (!this.fromMemory) {
-      this.setupDatabase();
+      this.database = new SequelizeDatabase(this.config.postgres, this.config.logger);
     }
   }
 
@@ -33,17 +30,17 @@ export default class Database extends EventEmitter {
         await this.database.setup();
 
         this.model = await this.database.getModel("Content");
-      } catch (err) {
-        super.emit("error", `Error getting models: ${err.message}`);
+      } catch (error) {
+        this.config.logger.error("Error getting models", {error: error.message});
       }
     }
   }
 
   public async set(key: string, content: string, path: string): Promise<void> {
-    super.emit("info", `[set] storing content with path: ${path}`);
+    this.config.logger.info("[set] storing content", {key, path});
 
     if (this.fromMemory) {
-      super.emit("info", `[set] using memory for content with path: ${path}`);
+      this.config.logger.info("[set] using memory for content", {key, path});
       this.memStorage[key] = content;
       return;
     }
@@ -56,17 +53,17 @@ export default class Database extends EventEmitter {
         path: this.getPathForQuery(path),
       });
 
-      super.emit("info", `[set] content stored with path: ${path}`);
+      this.config.logger.info("[set] content stored", {key, path});
     } else {
-      super.emit("error", `[set] No model available, cannot store ${key}`);
+      this.config.logger.error("[set] No model available, cannot store", {key, path});
     }
   }
 
   public async get(key: string): Promise<any> {
-    super.emit("info", `[get] retrieving content with key: ${key}`);
+    this.config.logger.info("[get] retrieving content", {key});
 
     if (this.fromMemory) {
-      super.emit("info", `[get] using memory for content with key: ${key}`);
+      this.config.logger.info("[get] using memory for content", {key});
       return this.memStorage[key];
     }
 
@@ -79,18 +76,18 @@ export default class Database extends EventEmitter {
       });
 
       if (content) {
-        super.emit("info", `[get] content retrieved with key: ${key}`);
+        this.config.logger.info("[get] content retrieved with key", {key});
         return content.dataValues.content;
       }
     } else {
-      super.emit("error", `[get] No model available, cannot get ${key}`);
+      this.config.logger.error("[get] No model available, cannot get", {key});
     }
 
     return "";
   }
 
   public async getByPath(path: string): Promise<ContentInterface | null> {
-    super.emit("info", `[getByPath] retrieving raw content with path: ${path}`);
+    this.config.logger.info("[getByPath] retrieving raw content", {path});
 
     if (this.model) {
       // @ts-ignore
@@ -105,17 +102,17 @@ export default class Database extends EventEmitter {
         return content.dataValues;
       }
     } else {
-      super.emit("error", `[getByPath] No model available, cannot getByPath ${path}`);
+      this.config.logger.error("[getByPath] No model available, cannot getByPath", {path});
     }
 
     return null;
   }
 
   public async del(key: string): Promise<void> {
-    super.emit("info", `[del] deleting content with key: ${key}`);
+    this.config.logger.info("[del] deleting content", {key});
 
     if (this.fromMemory) {
-      super.emit("info", `[del] using memory for content with key: ${key}`);
+      this.config.logger.info("[del] using memory for content", {key});
       delete this.memStorage[key];
     }
 
@@ -127,15 +124,15 @@ export default class Database extends EventEmitter {
         },
       });
 
-      super.emit("info", `[del] content deleted with key: ${key}`);
+      this.config.logger.info("[del] content deleted", {key});
     }
   }
 
   public async getAll(): Promise<any[]> {
-    super.emit("info", `[getAll] retrieving summary`);
+    this.config.logger.info("[getAll] retrieving summary");
 
     if (this.fromMemory) {
-      super.emit("info", `[getAll] using memory`);
+      this.config.logger.info("[getAll] using memory");
 
       const entries = [];
 
@@ -158,19 +155,6 @@ export default class Database extends EventEmitter {
     }
 
     return [];
-  }
-
-  public async close(): Promise<void> {
-    if (this.database) {
-      await this.database.close();
-    }
-  }
-
-  private setupDatabase(): void {
-    this.database = new SequelizeDatabase(this.config.postgres);
-
-    this.database.on("info", (...params) => super.emit("info", ...params));
-    this.database.on("error", (...params) => super.emit("error", ...params));
   }
 
   private getPathForQuery(path: string): string {

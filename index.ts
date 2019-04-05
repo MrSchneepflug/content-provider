@@ -20,6 +20,12 @@ const defaultOptions: ConfigInterface = {
   tconf: {
     "auto.offset.reset": "earliest",
   },
+  logger: {
+    info: () => undefined,
+    error: () => undefined,
+    debug: () => undefined,
+    warn: () => undefined,
+  },
 };
 
 export {Database};
@@ -44,10 +50,10 @@ export default (options: ConfigInterface): {
 
     expressApplication.listen(port, (error: any) => {
       if (error) {
-        expressApplication.emit("error", {msg: "webserver crashed", error: error.message});
+        config.logger.error("webserver crashed", {error: error.message});
         process.exit(1);
       } else {
-        expressApplication.emit("info", `Application listening on port ${port}`);
+        config.logger.info(`Application listening on port ${port}`);
       }
     });
   }

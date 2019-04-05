@@ -10,7 +10,7 @@ export function createExpressApplication(config: ConfigInterface, database: Data
 
   app.use(cors());
   app.use(healthRoutes());
-  app.use(contentRoutes(app, config, database));
+  app.use(contentRoutes(config.logger, config, database));
 
   return app;
 }

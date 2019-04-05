@@ -1,16 +1,14 @@
 import retry from "async-retry";
-import {EventEmitter} from "events";
 import {Model, Sequelize} from "sequelize";
 
 import DatabaseConfigInterface from "../interfaces/DatabaseConfigInterface";
+import LoggerInterface from "../interfaces/LoggerInterface";
 import Models from "../models";
 
-export default class SequelizeDatabase extends EventEmitter {
+export default class SequelizeDatabase {
   private db: Sequelize;
 
-  constructor(private options: DatabaseConfigInterface) {
-    super();
-
+  constructor(private options: DatabaseConfigInterface, private readonly logger: LoggerInterface) {
     const config = Object.assign({
       database: "",
       password: "",
@@ -29,13 +27,9 @@ export default class SequelizeDatabase extends EventEmitter {
     try {
       await this.testConnection();
       await this.sync();
-    } catch (err) {
-      super.emit("error", `Unable to set up connection: ${err.message}`);
+    } catch (error) {
+      this.logger.error("Unable to set up connection", {error: error.message});
     }
-  }
-
-  public async close(): Promise<void> {
-    await this.db.close();
   }
 
   public getModel(name: string): Model<any, any> {
@@ -46,20 +40,20 @@ export default class SequelizeDatabase extends EventEmitter {
   private async testConnection(): Promise<void> {
     try {
       await retry(async (bail: any, attempt: number) => {
-        super.emit("info", `trying to connect to database with attempt (${attempt}/10)`);
+        this.logger.info(`trying to connect to database with attempt (${attempt}/10)`);
         await this.db.authenticate();
       }, {
         retries: 9,
         minTimeout: 3000,
         factor: 1,
         onRetry: (error: any) => {
-          super.emit("error", `Retrying to connect, error: ${error.message}`);
+          this.logger.error("Retrying to connect", {error: error.message});
         },
       });
 
-      super.emit("info", "Connection has been established successfully.");
-    } catch (err) {
-      super.emit("error", `Unable to connect to the database: ${err.message}`);
+      this.logger.info("Connection has been established successfully.");
+    } catch (error) {
+      this.logger.error("Unable to connect to the database: ", {error: error.message});
 
       // Since the database is a mandatory service, there is no need to do anything else here.
       // Restart the container and try again to connect.
@@ -70,8 +64,8 @@ export default class SequelizeDatabase extends EventEmitter {
   private async sync() {
     try {
       this.db = await new Models(this.db).load();
-    } catch (err) {
-      super.emit("error", `Unable to sync models: ${err.message}`);
+    } catch (error) {
+      this.logger.error("Unable to sync models", {error: error.message});
     }
   }
 }
