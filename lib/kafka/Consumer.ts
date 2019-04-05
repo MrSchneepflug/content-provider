@@ -32,31 +32,22 @@ export default class Consumer extends EventEmitter {
       throw new Error("Can only handle messages in KafkaMessage format");
     }
 
+    super.emit("info", "received message");
+
+    const {content, path} = message.value;
+    const key = message.key.toString("utf8");
+
     try {
-      super.emit("info", "received message");
-
-      const {content, path} = message.value;
-      const key = message.key.toString("utf8");
-
       if (content) {
-        try {
-          await this.database.set(key, content, path);
-          commit();
-          super.emit("stored", {key, path});
-        } catch (error) {
-          super.emit("error", {msg: "could not store page", key, path});
-        }
+        await this.database.set(key, content, path);
       } else {
-        try {
-          await this.database.del(key);
-          commit();
-          super.emit("deleted", {key, path});
-        } catch (error) {
-          super.emit("error", {msg: "could not delete page", key, path});
-        }
+        await this.database.del(key);
       }
+
+      commit();
+      super.emit(content ? "stored" : "deleted", {key, path});
     } catch (error) {
-      super.emit("error", error);
+      super.emit("error", {msg: `could not ${content ? "store" : "delete"} page`, key, path});
     }
   }
 }
