@@ -1,7 +1,6 @@
 import {Request, Response, Router} from "express";
 import Database from "../database/Database";
 import ConfigInterface from "../interfaces/ConfigInterface";
-import ContentInterface from "../interfaces/ContentInterface";
 
 function contentRoutes(config: ConfigInterface, database: Database) {
   const router: Router = Router();

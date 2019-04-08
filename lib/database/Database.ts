@@ -37,8 +37,8 @@ export default class Database {
     }
   }
 
-  public async set(key: string, content: string, path: string): Promise<void> {
-    this.config.logger.info("[set] storing content", {key, path});
+  public async set(id: string, content: string, path: string): Promise<void> {
+    this.config.logger.info("[set] storing content", {id, path});
 
     const upsertQuery = `
       INSERT INTO
@@ -54,13 +54,13 @@ export default class Database {
 
     await this.database.query(upsertQuery, {
       replacements: {
-        id: key,
+        id,
         path: this.getPathForQuery(path),
         content,
       },
     });
 
-    this.config.logger.info("[set] content stored", {key, path});
+    this.config.logger.info("[set] content stored", {id, path});
   }
 
   public async get(id: string): Promise<any> {
@@ -76,6 +76,7 @@ export default class Database {
       return rows[0].content;
     }
 
+    this.config.logger.info("[get] no content found for id", {id});
     return "";
   }
 
@@ -91,6 +92,7 @@ export default class Database {
       return rows[0].content;
     }
 
+    this.config.logger.info("[getByPath] no content found for path", {path});
     return "";
   }
 
