@@ -9,8 +9,18 @@ export default class Database {
   constructor(config: ConfigInterface) {
     this.config = config;
 
-    const {database, username, password} = this.config.postgres;
-    this.database = new Sequelize(database, username, password, {dialect: "postgres"});
+    const {database, username, password, host, port, pool} = this.config.postgres;
+    this.database = new Sequelize(
+      database,
+      username,
+      password,
+      {
+        host,
+        port,
+        pool,
+        dialect: "postgres",
+      },
+    );
   }
 
   public async connect(): Promise<void> {
