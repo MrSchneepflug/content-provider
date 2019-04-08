@@ -3,11 +3,11 @@ import {Logging} from "sequelize";
 export default interface DatabaseConfigInterface {
   fromMemory: boolean;
   active?: boolean;
-  database?: string;
+  database: string;
   dialect?: string;
-  host?: string;
-  password?: string;
-  username?: string;
+  host: string;
+  password: string;
+  username: string;
   logging?: Logging["logging"];
   pool?: {
     max?: number;

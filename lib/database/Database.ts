@@ -1,8 +1,6 @@
-import {Model} from "sequelize";
-
+import retry from "async-retry";
+import {QueryTypes, Sequelize} from "sequelize";
 import ConfigInterface from "../interfaces/ConfigInterface";
-import ContentInterface from "../interfaces/ContentInterface";
-import SequelizeDatabase from "./SequelizeDatabase";
 
 export default class Database {
   private readonly config: ConfigInterface;
@@ -10,8 +8,7 @@ export default class Database {
   private readonly memStorage: {
     [key: string]: string;
   };
-  private readonly database?: SequelizeDatabase;
-  private model?: Model<any, any>;
+  private readonly database?: Sequelize;
 
   constructor(config: ConfigInterface) {
     this.config = config;
@@ -20,18 +17,35 @@ export default class Database {
     this.fromMemory = this.config.postgres.fromMemory || !this.config.postgres.username;
 
     if (!this.fromMemory) {
-      this.database = new SequelizeDatabase(this.config.postgres, this.config.logger);
+      const {database, username, password} = this.config.postgres;
+      this.database = new Sequelize(database, username, password, {
+        dialect: "postgres",
+      });
     }
   }
 
   public async connect(): Promise<void> {
     if (this.database) {
       try {
-        await this.database.setup();
+        await retry(async (bail: any, attempt: number) => {
+          this.config.logger.info(`trying to connect to database with attempt (${attempt}/10)`);
+          await this.database!.authenticate();
+        }, {
+          retries: 9,
+          minTimeout: 3000,
+          factor: 1,
+          onRetry: (error: any) => {
+            this.config.logger.error("Retrying to connect", {error: error.message});
+          },
+        });
 
-        this.model = await this.database.getModel("Content");
+        this.config.logger.info("Connection has been established successfully.");
       } catch (error) {
-        this.config.logger.error("Error getting models", {error: error.message});
+        this.config.logger.error("Unable to connect to the database: ", {error: error.message});
+
+        // Since the database is a mandatory service, there is no need to do anything else here.
+        // Restart the container and try again to connect.
+        process.exit(1);
       }
     }
   }
@@ -45,12 +59,25 @@ export default class Database {
       return;
     }
 
-    if (this.model) {
-      // @ts-ignore
-      await this.model.upsert({
-        content,
-        id: key,
-        path: this.getPathForQuery(path),
+    if (this.database) {
+      const upsertQuery = `
+        INSERT INTO
+           "Contents"("id", "path", "content", "createdAt", "updatedAt")
+        VALUES
+          (:id, :path, :content, now(), now())
+        ON CONFLICT (id)
+        DO UPDATE SET
+          "path" = EXCLUDED.path,
+          "content" = EXCLUDED.content,
+          "updatedAt" = now()
+      `;
+
+      await this.database.query(upsertQuery, {
+        replacements: {
+          id: key,
+          path: this.getPathForQuery(path),
+          content,
+        },
       });
 
       this.config.logger.info("[set] content stored", {key, path});
@@ -59,72 +86,65 @@ export default class Database {
     }
   }
 
-  public async get(key: string): Promise<any> {
-    this.config.logger.info("[get] retrieving content", {key});
+  public async get(id: string): Promise<any> {
+    this.config.logger.info("[get] retrieving content", {id});
 
     if (this.fromMemory) {
-      this.config.logger.info("[get] using memory for content", {key});
-      return this.memStorage[key];
+      this.config.logger.info("[get] using memory for content", {id});
+      return this.memStorage[id];
     }
 
-    if (this.model) {
-      // @ts-ignore
-      const content = await this.model.findOne({
-        where: {
-          id: key,
-        },
-      });
+    if (this.database) {
+      const rows: Array<{content: string}> = await this.database.query(
+        `SELECT "content" FROM "Contents" WHERE "id" = :id LIMIT 1`,
+        {type: QueryTypes.SELECT, replacements: {id}},
+      );
 
-      if (content) {
-        this.config.logger.info("[get] content retrieved with key", {key});
-        return content.dataValues.content;
+      if (rows && rows.length === 1) {
+        this.config.logger.info("[get] content retrieved with id", {id});
+        return rows[0].content;
       }
     } else {
-      this.config.logger.error("[get] No model available, cannot get", {key});
+      this.config.logger.error("[get] No model available, cannot get", {id});
     }
 
     return "";
   }
 
-  public async getByPath(path: string): Promise<ContentInterface | null> {
+  public async getByPath(path: string): Promise<string> {
     this.config.logger.info("[getByPath] retrieving raw content", {path});
 
-    if (this.model) {
-      // @ts-ignore
-      const content = await this.model.findOne({
-        order: [["createdAt", "DESC"]],
-        where: {
-          path: `/${this.getPathForQuery(path)}`,
-        },
-      });
+    if (this.database) {
+      const rows: Array<{content: string}> = await this.database.query(
+        `SELECT "content" FROM "Contents" WHERE "path" = :path ORDER BY "createdAt" DESC LIMIT 1`,
+        {type: QueryTypes.SELECT, replacements: {path: `/${this.getPathForQuery(path)}`}},
+      );
 
-      if (content) {
-        return content.dataValues;
+      if (rows && rows.length === 1) {
+        return rows[0].content;
       }
     } else {
       this.config.logger.error("[getByPath] No model available, cannot getByPath", {path});
     }
 
-    return null;
+    return "";
   }
 
-  public async del(key: string): Promise<void> {
-    this.config.logger.info("[del] deleting content", {key});
+  public async del(id: string): Promise<void> {
+    this.config.logger.info("[del] deleting content", {id});
 
     if (this.fromMemory) {
-      this.config.logger.info("[del] using memory for content", {key});
-      delete this.memStorage[key];
+      this.config.logger.info("[del] using memory for content", {id});
+      delete this.memStorage[id];
     }
 
-    if (this.model) {
-      await this.model.destroy({
-        // @ts-ignore
-        where: {
-          id: key,
-        },
-      });
+    if (this.database) {
+      await this.database.query(
+        `DELETE FROM "Contents" WHERE "id" = :id`,
+        {type: QueryTypes.DELETE, replacements: {id}},
+      );
 
-      this.config.logger.info("[del] content deleted", {key});
+      this.config.logger.info("[del] content deleted", {id});
     }
   }
 
@@ -147,11 +167,8 @@ export default class Database {
       return entries;
     }
 
-    if (this.model) {
-      // @ts-ignore
-      return await this.model.findAll({
-        attributes: ["id", "path"],
-      });
+    if (this.database) {
+      return await this.database.query(`SELECT "id", "path" FROM "Contents"`, {type: QueryTypes.SELECT});
     }
 
     return [];

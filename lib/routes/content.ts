@@ -49,13 +49,13 @@ function contentRoutes(config: ConfigInterface, database: Database) {
     const path = req.params[0];
 
     try {
-      const entry: ContentInterface | null = await database.getByPath(path);
+      const content: string = await database.getByPath(path);
 
-      if (entry && entry.content) {
+      if (content) {
         res.status(200)
           .set("content-type", "text/html")
           .set("cache-control", `max-age=${config.webserver.contentMaxAgeSec || 300}`)
-          .end(entry.content);
+          .end(content);
 
         config.logger.info("served raw", {path});
       } else {
