@@ -1,7 +1,6 @@
 import {Logging} from "sequelize";
 
 export default interface DatabaseConfigInterface {
-  fromMemory: boolean;
   active?: boolean;
   database: string;
   dialect?: string;
