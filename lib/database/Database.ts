@@ -123,6 +123,17 @@ export default class Database {
     return await this.database.query(`SELECT "id", "path" FROM "Contents"`, {type: QueryTypes.SELECT});
   }
 
+  public async exists(path: string): Promise<boolean> {
+    this.config.logger.info("[exists] checking if amp-page exists");
+
+    const rows: Array<{count: string}> = await this.database.query(
+      `SELECT COUNT(*) AS "count" FROM "Contents" WHERE "path" = :path`,
+      {type: QueryTypes.SELECT, replacements: {path}},
+    );
+
+    return rows[0].count === "1";
+  }
+
   private getPathForQuery(path: string): string {
     let queryPath = path.startsWith("/") ? path.substr(1) : path;
     queryPath = queryPath.endsWith("/") ? path.substring(0, path.length - 1) : path;
