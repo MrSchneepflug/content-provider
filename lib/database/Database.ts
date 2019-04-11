@@ -126,12 +126,12 @@ export default class Database {
   public async exists(path: string): Promise<boolean> {
     this.config.logger.info("[exists] checking if amp-page exists");
 
-    const rows: Array<{count: string}> = await this.database.query(
-      `SELECT COUNT(*) AS "count" FROM "Contents" WHERE "path" = :path`,
+    const rows: any[] = await this.database.query(
+      `SELECT 1 WHERE EXISTS (SELECT 1 FROM "Contents" WHERE "path" = :path)`,
       {type: QueryTypes.SELECT, replacements: {path}},
     );
 
-    return rows[0].count === "1";
+    return rows.length > 0;
   }
 
   private getPathForQuery(path: string): string {
