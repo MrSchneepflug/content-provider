@@ -65,7 +65,7 @@ export default class Database {
     await this.database.query(upsertQuery, {
       replacements: {
         id,
-        path: this.getPathForQuery(path),
+        path,
         content,
       },
     });
@@ -95,7 +95,7 @@ export default class Database {
 
     const rows: Array<{content: string}> = await this.database.query(
       `SELECT "content" FROM "Contents" WHERE "path" = :path ORDER BY "createdAt" DESC LIMIT 1`,
-      {type: QueryTypes.SELECT, replacements: {path: `/${this.getPathForQuery(path)}`}},
+      {type: QueryTypes.SELECT, replacements: {path}},
     );
 
     if (rows && rows.length === 1) {
@@ -135,12 +135,5 @@ export default class Database {
     this.config.logger.info(`[exists] amp-page ${exists ? "exists" : "does not exist"}`, {path});
 
     return exists;
-  }
-
-  private getPathForQuery(path: string): string {
-    let queryPath = path.startsWith("/") ? path.substr(1) : path;
-    queryPath = queryPath.endsWith("/") ? path.substring(0, path.length - 1) : path;
-
-    return queryPath;
   }
 }
