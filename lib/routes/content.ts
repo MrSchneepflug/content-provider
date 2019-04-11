@@ -45,7 +45,7 @@ function contentRoutes(config: ConfigInterface, database: Database) {
   });
 
   router.get("/raw/*", async (req: Request, res: Response) => {
-    const path = req.params[0];
+    const path = `/${req.params[0]}`;
 
     try {
       const content: string = await database.getByPath(path);
