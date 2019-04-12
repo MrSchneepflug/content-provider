@@ -1,5 +1,6 @@
 import retry from "async-retry";
 import {QueryTypes, Sequelize} from "sequelize";
+import url from "url";
 import ConfigInterface from "../interfaces/ConfigInterface";
 
 export default class Database {
@@ -48,6 +49,8 @@ export default class Database {
   }
 
   public async set(id: string, content: string, path: string): Promise<void> {
+    path = this.normalizePath(path);
+
     this.config.logger.info("[set] storing content", {id, path});
 
     const upsertQuery = `
@@ -91,6 +94,8 @@ export default class Database {
   }
 
   public async getByPath(path: string): Promise<string> {
+    path = this.normalizePath(path);
+
     this.config.logger.info("[getByPath] retrieving raw content", {path});
 
     const rows: Array<{content: string}> = await this.database.query(
@@ -124,6 +129,8 @@ export default class Database {
   }
 
   public async exists(path: string): Promise<boolean> {
+    path = this.normalizePath(path);
+
     this.config.logger.info("[exists] checking if amp-page exists", {path});
 
     const rows: any[] = await this.database.query(
@@ -135,5 +142,28 @@ export default class Database {
     this.config.logger.info(`[exists] amp-page ${exists ? "exists" : "does not exist"}`, {path});
 
     return exists;
+  }
+
+  private normalizePath(path: string): string {
+    const parsedUrl = url.parse(path);
+
+    if (!parsedUrl.pathname) {
+      this.config.logger.error("[normalizePath] could not parse path", {...parsedUrl});
+      return "";
+    }
+
+    let normalizedPath = parsedUrl.pathname;
+
+    if (!normalizedPath.startsWith("/")) {
+      this.config.logger.info("[normalizePath] missing leading slash", {...parsedUrl});
+      normalizedPath = `/${normalizedPath}`;
+    }
+
+    if (!normalizedPath.endsWith("/")) {
+      this.config.logger.info("[normalizePath] missing trailing slash", {...parsedUrl});
+      normalizedPath = `${normalizedPath}/`;
+    }
+
+    return normalizedPath;
   }
 }
