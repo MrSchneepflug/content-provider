@@ -146,21 +146,22 @@ export default class Database {
 
   private normalizePath(path: string): string {
     const parsedUrl = url.parse(path);
+    const logPayload = {parsedUrl: JSON.stringify(parsedUrl)};
 
     if (!parsedUrl.pathname) {
-      this.config.logger.error("[normalizePath] could not parse path", {...parsedUrl});
+      this.config.logger.error("[normalizePath] could not parse path", logPayload);
       return "";
     }
 
     let normalizedPath = parsedUrl.pathname;
 
     if (!normalizedPath.startsWith("/")) {
-      this.config.logger.info("[normalizePath] missing leading slash", {...parsedUrl});
+      this.config.logger.info("[normalizePath] missing leading slash", logPayload);
       normalizedPath = `/${normalizedPath}`;
     }
 
     if (!normalizedPath.endsWith("/")) {
-      this.config.logger.info("[normalizePath] missing trailing slash", {...parsedUrl});
+      this.config.logger.info("[normalizePath] missing trailing slash", logPayload);
       normalizedPath = `${normalizedPath}/`;
     }
 
