@@ -44,6 +44,21 @@ function contentRoutes(config: ConfigInterface, database: Database) {
     }
   });
 
+  router.delete("/content/:key", async (req: Request, res: Response) => {
+    const {key} = req.params;
+
+    try {
+      await database.del(key);
+      res.status(200).json({
+        deleted: key,
+      });
+      config.logger.info("deleted", {key});
+    } catch (error) {
+      res.status(500).json({error: "could not delete content", message: error.message});
+      config.logger.error("could not delete content", {key, error: error.message});
+    }
+  });
+
   router.get("/raw/*", async (req: Request, res: Response) => {
     const path = `/${req.params[0]}`;
 
